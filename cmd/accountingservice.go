@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/lizw91/otel-demo/pkg/observability"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/lizw91/otel-demo/internal/observability"
 	"github.com/lizw91/otel-demo/internal/router"
 )
 
