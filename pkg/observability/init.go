@@ -21,14 +21,21 @@ import (
 )
 
 const (
-	otelExporterOTLPEndpoint = "OTEL_EXPORTER_OTLP_ENDPOINT"
-	otelExporterProtocol     = "OTEL_EXPORTER_PROTOCOL"
+	otelExporterOTLPEndpoint = "OTLP_ENDPOINT"
+	otelExporterProtocol     = "PROTOCOL"
 	insecureMode             = "INSECURE_MODE"
 )
 
+func Init(appName string) error {
+	if _, err := initProvider(appName); err != nil {
+		return err
+	}
+	return nil
+}
+
 // InitProvider Initializes an OTLP exporter, and configures the corresponding trace and
 // metric providers.
-func InitProvider(appName string) (trace.TracerProvider, error) {
+func initProvider(appName string) (trace.TracerProvider, error) {
 	ctx := context.Background()
 
 	otelAgentEndpoint, ok := os.LookupEnv(otelExporterOTLPEndpoint)
@@ -67,13 +74,18 @@ func InitProvider(appName string) (trace.TracerProvider, error) {
 
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		//sdktrace.WithSampler(sdktrace.ParentBased(sdktrace.TraceIDRatioBased(0.5))),   // 可自定义采样率
 		sdktrace.WithResource(res),
 		sdktrace.WithBatcher(exporter),
 	)
 
 	otel.SetTracerProvider(tracerProvider)
 	// set global propagator to tracecontext (the default is no-op).
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{}),
+	)
 
 	return tracerProvider, nil
 }
